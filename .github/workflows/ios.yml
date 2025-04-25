@@ -1,0 +1,47 @@
+name: iOS Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby for CocoaPods
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0
+
+      - name: Install CocoaPods dependencies
+        run: pod install
+
+      - name: Build app with xcodebuild
+        run: |
+          xcodebuild clean archive \
+            -workspace YourApp.xcworkspace \
+            -scheme YourApp \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath ${{ github.workspace }}/build/YourApp.xcarchive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=YOUR_TEAM_ID \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath ${{ github.workspace }}/build/YourApp.xcarchive \
+            -exportPath ${{ github.workspace }}/build \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ipa
+          path: build/YourApp.ipa
